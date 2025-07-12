@@ -3,6 +3,7 @@ import {
     httpRequest,
     createSuccessResponse,
     createErrorResponse,
+    generateUUID,
     storage
 } from './utils/common.js';
 

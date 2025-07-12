@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Cookie管理</title>
+    <link rel="stylesheet" href="./style.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.7/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+<div class="artboard phone-2 box p-4">
+    <!-- Navigation Menu -->
+    <ul class="menu menu-horizontal lg:menu-horizontal bg-base-200 rounded-box mb-4">
+        <li><a class="btn-scan active" data-platform="115">115</a></li>
+        <li><a class="btn-scan" data-platform="quark">夸克</a></li>
+        <li><a class="btn-scan" data-platform="ali">阿里</a></li>
+        <li><a class="btn-scan" data-platform="uc">UC</a></li>
+    </ul>
+
+    <!-- QR Code -->
+    <div class="qrcode-container text-center mb-4">
+        <img id="qrcode" src="./shixiao.jpg" alt="二维码" class="mx-auto"/>
+        <div class="qrcode-overlay" id="qrcode-overlay" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>正在生成二维码...</p>
+        </div>
+    </div>
+
+    <!-- Divider -->
+    <div class="divider divider-neutral mb-4">请使用手机APP扫码登录</div>
+
+    <!-- Textarea with improved styling -->
+    <textarea
+        id="cookie-result"
+        class="textarea textarea-bordered w-full h-40 p-4 bg-white border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        placeholder="扫码确认后将在此处展示cookie"
+    ></textarea>
+
+    <!-- Buttons with improved design -->
+    <div class="flex justify-center gap-4 mt-4">
+        <button
+            id="copy-btn"
+            class="btn btn-primary w-28 py-2 rounded-lg text-white shadow-lg transform transition-all duration-200 hover:bg-blue-600 hover:scale-105"
+            onclick="copyToClipboard()"
+        >
+            复制
+        </button>
+        <button
+            id="clear-btn"
+            class="btn btn-warning w-28 py-2 rounded-lg text-white shadow-lg transform transition-all duration-200 hover:bg-yellow-600 hover:scale-105"
+            onclick="clearCurrentPlatform()"
+        >
+            清空
+        </button>
+    </div>
+
+    <!-- 状态提示 -->
+    <div class="status-message" id="status-message"></div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast toast-top toast-end">
+    <div class="toast-content" id="toast" style="display: none;">
+        <span id="toast-content"></span>
+    </div>
+</div>
+
+<script src="./script.js"></script>
+</body>
+</html>

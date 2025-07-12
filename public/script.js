@@ -1,5 +1,5 @@
 // 全局变量
-let currentPlatform = '115';
+let currentPlatform = 'quark';
 let currentSessionKey = null;
 let pollInterval = null;
 let timeoutTimer = null;

@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { randomUUID, createHash } from 'crypto';
 
 // 通用请求头
 export const COMMON_HEADERS = {
@@ -19,71 +18,32 @@ export const STATUS = {
     EXPIRED: 'EXPIRED'
 };
 
-// 生成UUID
-export function generateUUID() {
-    return randomUUID();
+
+
+// 按照CatPawOpen的getCookieArray实现
+export const getCookieArray = (cookies) => {
+    if (!cookies) return [];
+    return cookies.map(cookie => cookie.split(";")[0] + ";");
 }
 
-// 生成MD5
-export function md5(text) {
-    return createHash('md5').update(text).digest('hex');
-}
-
-// 格式化Cookie
+// 格式化Cookie - 基于getCookieArray实现
 export function formatCookies(cookies) {
     if (!cookies) return '';
-    
+
     if (typeof cookies === 'string') {
         return cookies;
     }
-    
+
     if (Array.isArray(cookies)) {
-        return cookies.map(cookie => {
-            if (typeof cookie === 'string') {
-                return cookie.split(';')[0];
-            }
-            return '';
-        }).filter(Boolean).join('; ');
+        return getCookieArray(cookies).join('');
     }
-    
+
     return '';
 }
 
-// 解析Cookie数组
-export function parseCookieArray(cookieString) {
-    if (!cookieString) return [];
-    
-    const result = [];
-    let currentCookie = '';
-    let inExpires = false;
 
-    for (let i = 0; i < cookieString.length; i++) {
-        const char = cookieString[i];
 
-        // 判断是否进入或退出 expires 属性
-        if (cookieString.slice(i, i + 8).toLowerCase() === 'expires=') {
-            inExpires = true;
-        }
-        if (inExpires && char === ';') {
-            inExpires = false;
-        }
 
-        // 检测到逗号分隔符并且不在 expires 属性中
-        if (char === ',' && !inExpires) {
-            result.push(currentCookie.trim());
-            currentCookie = '';
-        } else {
-            currentCookie += char;
-        }
-    }
-
-    // 添加最后一个Cookie
-    if (currentCookie.trim()) {
-        result.push(currentCookie.trim());
-    }
-
-    return result;
-}
 
 // HTTP请求封装
 export async function httpRequest(config) {
@@ -176,7 +136,7 @@ export const storage = {
     },
 
     // 兼容性方法
-    set(key, value, ttl = 300000) {
+    set(_key, value, ttl = 300000) {
         // 在客户端存储方案中，这个方法返回编码后的key
         return this.encode(value, ttl);
     },
@@ -185,7 +145,7 @@ export const storage = {
         return this.decode(sessionKey);
     },
 
-    delete(key) {
+    delete(_key) {
         // 客户端存储方案中，删除操作由客户端处理
         return true;
     },

@@ -4,7 +4,8 @@ import {
     createErrorResponse,
     storage,
     STATUS,
-    formatCookies
+    formatCookies,
+    getCookieArray
 } from './utils/common.js';
 
 // 平台状态检查处理器
@@ -113,7 +114,7 @@ async function check115Status(sessionKey) {
     }
 }
 
-// 夸克网盘状态检查
+// 夸克网盘状态检查 - 按照CatPawOpen实现
 async function checkQuarkStatus(sessionKey) {
     try {
         const sessionData = storage.decode(sessionKey);
@@ -121,46 +122,76 @@ async function checkQuarkStatus(sessionKey) {
             return createSuccessResponse({ status: STATUS.EXPIRED });
         }
 
-        const { token, request_id } = sessionData;
-        
+        const { token, cookies: initialCookies } = sessionData;
+
         const response = await httpRequest({
             method: 'GET',
             url: 'https://uop.quark.cn/cas/ajax/getServiceTicketByQrcodeToken',
             params: {
-                request_id: request_id,
                 client_id: '532',
                 v: '1.2',
                 token: token
+            },
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.81 Safari/537.36 SE 2.X MetaSr 1.0'
             }
         });
-        
+
         if (response.data.status === 2000000) { // 扫码成功
             const serviceTicket = response.data.data.members.service_ticket;
-            
-            // 获取cookie
-            const cookieResponse = await httpRequest({
+
+            // 使用初始cookies
+            let cookies = getCookieArray(initialCookies || []);
+
+            // 第一步：获取账户信息
+            const accountResponse = await httpRequest({
                 method: 'GET',
                 url: 'https://pan.quark.cn/account/info',
                 params: {
                     st: serviceTicket,
-                    lw: 'scan'
+                    fr: 'pc',
+                    platform: 'pc'
+                },
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.81 Safari/537.36 SE 2.X MetaSr 1.0',
+                    'Cookie': cookies.join('')
                 }
             });
-            
-            const cookies = formatCookies(cookieResponse.headers['set-cookie']);
-            // 客户端存储方案中，删除操作由客户端处理
+
+            if (accountResponse.headers['set-cookie']) {
+                cookies = cookies.concat(getCookieArray(accountResponse.headers['set-cookie']));
+            }
+
+            // 第二步：调用云盘API获取完整Cookie
+            const cloudResponse = await httpRequest({
+                method: 'GET',
+                url: 'https://drive-pc.quark.cn/1/clouddrive/share/sharepage/dir',
+                params: {
+                    pr: 'ucpro',
+                    fr: 'pc',
+                    uc_param_str: '',
+                    aver: '1'
+                },
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.81 Safari/537.36 SE 2.X MetaSr 1.0',
+                    'Cookie': cookies.join('')
+                }
+            });
+
+            if (cloudResponse.headers['set-cookie']) {
+                cookies = cookies.concat(getCookieArray(cloudResponse.headers['set-cookie']));
+            }
 
             return createSuccessResponse({
                 status: STATUS.CONFIRMED,
-                cookie: cookies
+                cookie: cookies.join('')
             });
         } else if (response.data.status === 50004002) {
-            // 客户端存储方案中，删除操作由客户端处理
             return createSuccessResponse({ status: STATUS.EXPIRED });
         } else {
             return createSuccessResponse({ status: STATUS.NEW });
         }
-        
+
     } catch (error) {
         return createErrorResponse('检查夸克状态失败: ' + error.message);
     }
@@ -237,7 +268,7 @@ async function checkAliStatus(sessionKey) {
     }
 }
 
-// UC网盘状态检查
+// UC网盘状态检查 - 按照CatPawOpen实现
 async function checkUCStatus(sessionKey) {
     try {
         const sessionData = storage.decode(sessionKey);
@@ -245,48 +276,79 @@ async function checkUCStatus(sessionKey) {
             return createSuccessResponse({ status: STATUS.EXPIRED });
         }
 
-        const { token, request_id } = sessionData;
-        
+        const { token, request_id, cookies: initialCookies } = sessionData;
+
         const response = await httpRequest({
-            method: 'POST',
+            method: 'GET',
             url: 'https://api.open.uc.cn/cas/ajax/getServiceTicketByQrcodeToken',
-            data: {
-                v: '1.2',
-                request_id: request_id,
+            params: {
+                __t: Date.now(),
+                token: token,
                 client_id: '381',
-                token: token
+                v: '1.2',
+                request_id: request_id
             },
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.81 Safari/537.36 SE 2.X MetaSr 1.0',
+                'Referer': 'https://drive.uc.cn'
             }
         });
-        
+
         if (response.data.status === 2000000) { // 扫码成功
             const serviceTicket = response.data.data.members.service_ticket;
-            
-            // 获取cookie
-            const cookieResponse = await httpRequest({
+
+            // 使用初始cookies
+            let cookies = getCookieArray(initialCookies || []);
+
+            // 第一步：获取账户信息
+            const accountResponse = await httpRequest({
                 method: 'GET',
                 url: 'https://drive.uc.cn/account/info',
                 params: {
-                    st: serviceTicket
+                    st: serviceTicket,
+                    fr: 'pc',
+                    platform: 'pc'
+                },
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.81 Safari/537.36 SE 2.X MetaSr 1.0',
+                    'Cookie': cookies.join(''),
+                    'Referer': 'https://drive.uc.cn'
                 }
             });
-            
-            const cookies = formatCookies(cookieResponse.headers['set-cookie']);
-            // 客户端存储方案中，删除操作由客户端处理
+
+            if (accountResponse.headers['set-cookie']) {
+                cookies = cookies.concat(getCookieArray(accountResponse.headers['set-cookie']));
+            }
+
+            // 第二步：调用云盘API获取完整Cookie
+            const cloudResponse = await httpRequest({
+                method: 'POST',
+                url: 'https://pc-api.uc.cn/1/clouddrive/transfer/upload/pdir',
+                params: {
+                    pr: 'UCBrowser',
+                    fr: 'pc'
+                },
+                data: {},
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.81 Safari/537.36 SE 2.X MetaSr 1.0',
+                    'Cookie': cookies.join('')
+                }
+            });
+
+            if (cloudResponse.headers['set-cookie']) {
+                cookies = cookies.concat(getCookieArray(cloudResponse.headers['set-cookie']));
+            }
 
             return createSuccessResponse({
                 status: STATUS.CONFIRMED,
-                cookie: cookies
+                cookie: cookies.join('')
             });
         } else if (response.data.status === 50004002) {
-            // 客户端存储方案中，删除操作由客户端处理
             return createSuccessResponse({ status: STATUS.EXPIRED });
         } else {
             return createSuccessResponse({ status: STATUS.NEW });
         }
-        
+
     } catch (error) {
         return createErrorResponse('检查UC状态失败: ' + error.message);
     }

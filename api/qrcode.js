@@ -3,7 +3,6 @@ import {
     httpRequest,
     createSuccessResponse,
     createErrorResponse,
-    generateUUID,
     storage
 } from './utils/common.js';
 
@@ -93,28 +92,29 @@ async function handle115QRCode() {
     }
 }
 
-// 夸克网盘二维码处理
+// 夸克网盘二维码处理 - 按照CatPawOpen实现
 async function handleQuarkQRCode() {
     try {
-        const requestId = generateUUID();
         const response = await httpRequest({
             method: 'GET',
             url: 'https://uop.quark.cn/cas/ajax/getTokenForQrcodeLogin',
             params: {
-                request_id: requestId,
                 client_id: '532',
                 v: '1.2'
+            },
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.81 Safari/537.36 SE 2.X MetaSr 1.0'
             }
         });
-        
+
         const token = response.data.data.members.token;
+
         const qrUrl = `https://su.quark.cn/4_eMHBJ?token=${token}&client_id=532&ssb=weblogin&uc_param_str=&uc_biz_str=S%3Acustom%7COPT%3ASAREA%400%7COPT%3AIMMERSIVE%401%7COPT%3ABACK_BTN_STYLE%400`;
-        
-        // 使用客户端存储方案 - 将数据编码到sessionKey中
+
+        // 使用客户端存储方案 - 将数据编码到sessionKey中，包含初始cookies
         const sessionData = {
             platform: 'quark',
             token: token,
-            request_id: requestId,
             cookies: response.headers['set-cookie']
         };
 
@@ -130,7 +130,7 @@ async function handleQuarkQRCode() {
             qrcode: qrcodeDataURL,
             sessionKey: sessionKey
         });
-        
+
     } catch (error) {
         return createErrorResponse('生成夸克二维码失败: ' + error.message);
     }
@@ -180,31 +180,36 @@ async function handleAliQRCode() {
     }
 }
 
-// UC网盘二维码处理
+// UC网盘二维码处理 - 按照CatPawOpen实现
 async function handleUCQRCode() {
     try {
-        const requestId = generateUUID();
+        const requestId = Date.now();
+
         const response = await httpRequest({
-            method: 'POST',
+            method: 'GET',
             url: 'https://api.open.uc.cn/cas/ajax/getTokenForQrcodeLogin',
-            data: {
+            params: {
+                client_id: '381',
                 v: '1.2',
-                request_id: requestId,
-                client_id: '381'
+                request_id: requestId
             },
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.81 Safari/537.36 SE 2.X MetaSr 1.0',
+                'Referer': 'https://drive.uc.cn'
             }
         });
-        
+
         const token = response.data.data.members.token;
-        const qrUrl = `https://su.uc.cn/1_n0ZCv?token=${token}&client_id=381&uc_param_str=&uc_biz_str=S%3Acustom%7CC%3Atitlebar_fix`;
-        
-        // 使用客户端存储方案 - 将数据编码到sessionKey中
+
+        // 使用与CatPawOpen项目一致的参数
+        const qrUrl = `https://su.uc.cn/1_n0ZCv?uc_param_str=dsdnfrpfbivesscpgimibtbmnijblauputogpintnwktprchmt&token=${token}&client_id=381&uc_biz_str=S%3Acustom%7CC%3Atitlebar_fix`;
+
+        // 使用客户端存储方案 - 将数据编码到sessionKey中，包含初始cookies
         const sessionData = {
             platform: 'uc',
             token: token,
-            request_id: requestId
+            request_id: requestId,
+            cookies: response.headers['set-cookie']
         };
 
         const sessionKey = storage.encode(sessionData);
@@ -219,7 +224,7 @@ async function handleUCQRCode() {
             qrcode: qrcodeDataURL,
             sessionKey: sessionKey
         });
-        
+
     } catch (error) {
         return createErrorResponse('生成UC二维码失败: ' + error.message);
     }

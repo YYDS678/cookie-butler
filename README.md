@@ -2,6 +2,8 @@
 
 一个多平台二维码Cookie获取工具，支持夸克网盘、UC网盘、阿里云盘、115网盘的扫码登录。
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/YOUR_USERNAME/cookie-butler)
+
 ## 🚀 快速开始
 
 ### 环境要求

@@ -2,10 +2,10 @@
 // 配置中心
 // =================================================================================
 const PLATFORM_CONFIG = [
-    { id: 'quark', name: '夸克', default: true },
-    { id: 'uc',    name: 'UC' },
-    { id: 'ali',   name: '阿里' },
-    { id: '115',   name: '115' },
+    { id: 'quark', name: '夸克', default: true, envNames: ['夸克Cookie'] },
+    { id: 'uc', name: 'UC', envNames: ['UCCookie'] },
+    { id: 'ali', name: '阿里', envNames: [] },
+    { id: '115', name: '115', envNames: [] },
 ];
 const DEFAULT_PLATFORM = PLATFORM_CONFIG.find(p => p.default) || PLATFORM_CONFIG[0];
 
@@ -34,7 +34,7 @@ let scanBtns = [];
 document.addEventListener('DOMContentLoaded', function () {
     initializeUI();
     loadLocalCookies();
-    
+
     // 绑定静态和动态事件
     qrcodeImg.addEventListener('click', refreshQRCode);
     window.addEventListener('popstate', route); // 监听浏览器前进/后退
@@ -180,7 +180,7 @@ function startPolling() {
                 console.log('Ignoring response from an old session.');
                 return;
             }
-            
+
             handleStatusResponse(response.data.data);
 
         } catch (error) {
@@ -203,7 +203,7 @@ function startPolling() {
     };
 
     // 设置一个初始值以启动轮询循环
-    pollInterval = 'active'; 
+    pollInterval = 'active';
     poller(); // 立即开始第一次轮询
 
     // 30秒后超时的逻辑保持不变
@@ -225,6 +225,9 @@ function handleStatusResponse({ status, cookie, token }) {
             updateStatus('扫码成功！Cookie已获取并自动缓存', 'success');
             qrcodeImg.src = './shixiao.jpg';
             showToast('扫码成功！Cookie已自动缓存');
+
+            // 调用独立的函数与Flutter通信
+            notifyFlutter(currentPlatform, newCookie);
             break;
         case 'SCANNED':
             updateStatus('已扫码，请在手机上确认', 'info');
@@ -238,6 +241,30 @@ function handleStatusResponse({ status, cookie, token }) {
         case 'NEW':
             updateStatus('等待扫码...', 'info');
             break;
+    }
+}
+
+/**
+ * 在获取Cookie成功后，调用此函数通知Flutter App
+ * @param {string} platformId - 当前平台的ID, e.g., 'quark'
+ * @param {string} cookie - 获取到的Cookie字符串
+ */
+function notifyFlutter(platformId, cookie) {
+    // 检查Flutter的JS bridge对象是否存在
+    if (window.flutter_inappwebview) {
+        try {
+            // 根据当前平台查找配置
+            const platformConfig = PLATFORM_CONFIG.find(p => p.id === platformId);
+            if (platformConfig && platformConfig.envNames && platformConfig.envNames.length > 0) {
+                const args = { names: platformConfig.envNames, cookie: cookie };
+                window.flutter_inappwebview.callHandler('uzSetEnv', args);
+                console.log('Flutter handler "uzSetEnv" called with:', args);
+            } else {
+                console.error(`Configuration for platform "${platformId}" or its envNames is missing or empty.`);
+            }
+        } catch (e) {
+            console.error('Error calling Flutter handler "uzSetEnv":', e);
+        }
     }
 }
 

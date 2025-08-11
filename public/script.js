@@ -1,214 +1,184 @@
+// =================================================================================
+// 配置中心
+// =================================================================================
+const PLATFORM_CONFIG = [
+    { id: 'quark', name: '夸克', default: true },
+    { id: 'uc',    name: 'UC' },
+    { id: 'ali',   name: '阿里' },
+    { id: '115',   name: '115' },
+];
+const DEFAULT_PLATFORM = PLATFORM_CONFIG.find(p => p.default) || PLATFORM_CONFIG[0];
+
+// =================================================================================
 // 全局变量
-let currentPlatform = 'quark';
+// =================================================================================
+let currentPlatform = null;
 let currentSessionKey = null;
 let pollInterval = null;
 let timeoutTimer = null;
+const platformCookies = Object.fromEntries(PLATFORM_CONFIG.map(p => [p.id, '']));
 
-// 平台Cookie缓存 - 内存中临时存储
-let platformCookies = {
-    '115': '',
-    'quark': '',
-    'ali': '',
-    'uc': ''
-};
-
+// =================================================================================
 // DOM元素
+// =================================================================================
 const qrcodeImg = document.getElementById('qrcode');
 const qrcodeOverlay = document.getElementById('qrcode-overlay');
 const cookieResult = document.getElementById('cookie-result');
 const statusMessage = document.getElementById('status-message');
-const scanBtns = document.querySelectorAll('.btn-scan');
+const platformMenu = document.getElementById('platform-menu');
+let scanBtns = [];
 
-// 初始化
-document.addEventListener('DOMContentLoaded', function() {
-    initializePage();
+// =================================================================================
+// 初始化流程
+// =================================================================================
+document.addEventListener('DOMContentLoaded', function () {
+    initializeUI();
+    loadLocalCookies();
+    
+    // 绑定静态和动态事件
+    qrcodeImg.addEventListener('click', refreshQRCode);
+    window.addEventListener('popstate', route); // 监听浏览器前进/后退
+    document.body.addEventListener('click', handleGlobalClick); // 拦截应用内链接点击
+
+    // 初始路由处理
+    route();
 });
 
-// 初始化页面
-function initializePage() {
-    // 加载本地缓存的Cookie
-    loadLocalCookies();
+// =================================================================================
+// 核心功能 - 路由与导航
+// =================================================================================
 
-    // 绑定平台切换事件
-    scanBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const platform = this.dataset.platform;
-            switchPlatform(platform, this);
-        });
-    });
+/**
+ * 全局路由处理器
+ */
+function route() {
+    // 从URL路径中提取平台ID，例如从 "/quark" 提取 "quark"
+    let platformId = window.location.pathname.substring(1);
 
-    // 绑定二维码点击刷新事件
-    qrcodeImg.addEventListener('click', () => {
-        const activeElement = document.querySelector('.btn-scan.active');
-        if (activeElement) {
-            refreshQRCode();
-        }
-    });
+    const platformExists = PLATFORM_CONFIG.some(p => p.id === platformId);
 
-    // 初始状态显示提示信息，加载当前平台的cookie
-    loadPlatformCookie(currentPlatform);
-    updateStatus('点击二维码或平台按钮开始扫码', 'info');
+    if (!platformExists) {
+        platformId = DEFAULT_PLATFORM.id;
+        // 使用 history.replaceState 更新URL，避免在历史记录中留下无效或错误的条目
+        history.replaceState(null, '', `/${platformId}`);
+    }
+
+    const tabElement = document.getElementById(`${platformId}-tab`);
+    if (tabElement) {
+        switchPlatform(platformId, tabElement);
+    }
 }
 
-// 切换平台
+/**
+ * 拦截所有点击事件，处理应用内导航
+ * @param {Event} e - 点击事件对象
+ */
+function handleGlobalClick(e) {
+    // 寻找被点击的<a>元素或其父元素中的<a>
+    const anchor = e.target.closest('a');
+
+    // 检查是否是有效的应用内链接
+    if (anchor && anchor.matches('.btn-scan')) {
+        e.preventDefault(); // 阻止默认的页面跳转行为
+        const targetPath = anchor.getAttribute('href');
+
+        // 如果目标路径与当前路径不同，则更新历史记录并手动触发路由
+        if (window.location.pathname !== targetPath) {
+            history.pushState(null, '', targetPath);
+            route();
+        }
+    }
+}
+
+/**
+ * 切换平台的核心逻辑
+ */
 function switchPlatform(platform, clickedBtn) {
-    // 清除轮询
+    if (currentPlatform === platform) return;
+
     clearPolling();
 
-    // 保存当前平台的cookie到内存缓存
-    savePlatformCookie(currentPlatform, cookieResult.value);
+    if (currentPlatform) {
+        savePlatformCookie(currentPlatform, cookieResult.value);
+    }
 
-    // 更新UI状态
     scanBtns.forEach(btn => btn.classList.remove('active'));
     clickedBtn.classList.add('active');
 
-    // 更新当前平台
     currentPlatform = platform;
-
-    // 加载新平台的cookie
     loadPlatformCookie(platform);
 
-    // 显示失效二维码和提示信息，不自动生成新二维码
     qrcodeImg.src = './shixiao.jpg';
     updateStatus('点击二维码开始扫码', 'info');
 }
 
-// 刷新二维码
-async function refreshQRCode() {
-    try {
-        // 清除之前的轮询
-        clearPolling();
+/**
+ * 根据配置动态生成平台切换按钮
+ */
+function initializeUI() {
+    platformMenu.innerHTML = '';
+    PLATFORM_CONFIG.forEach(platform => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.id = `${platform.id}-tab`;
+        // 使用History模式的路径
+        a.href = `/${platform.id}`;
+        a.className = 'btn-scan';
+        a.dataset.platform = platform.id;
+        a.textContent = platform.name;
+        li.appendChild(a);
+        platformMenu.appendChild(li);
+    });
+    scanBtns = document.querySelectorAll('.btn-scan');
+}
 
-        // 显示加载状态
+// =================================================================================
+// 核心功能 - 二维码与状态轮询 (与之前版本基本相同)
+// =================================================================================
+
+async function refreshQRCode() {
+    if (!currentPlatform) return;
+    try {
+        clearPolling();
         showLoading(true);
         updateStatus('正在生成二维码...', 'info');
-
-        // 请求生成二维码
-        console.log(`正在为平台 ${currentPlatform} 生成二维码...`);
-        const response = await axios.post('/api/qrcode', {
-            platform: currentPlatform
-        });
-
-        console.log('二维码生成响应:', response.data);
-
+        const response = await axios.post('/api/qrcode', { platform: currentPlatform });
         if (response.data.success) {
-            // 保存会话密钥
             currentSessionKey = response.data.data.sessionKey;
-            console.log('会话密钥已保存，长度:', currentSessionKey.length);
-
-            // 显示二维码
             qrcodeImg.src = response.data.data.qrcode;
             showLoading(false);
             updateStatus('请使用手机APP扫码登录', 'info');
-
-            // 开始轮询检查状态
             startPolling();
         } else {
             throw new Error(response.data.message || '生成二维码失败');
         }
-
     } catch (error) {
         console.error('生成二维码失败:', error);
         showLoading(false);
-
-        // 更详细的错误处理
-        let errorMessage = '生成二维码失败';
-        if (error.response) {
-            // 服务器响应错误
-            errorMessage = `服务器错误 (${error.response.status}): ${error.response.data?.message || error.message}`;
-        } else if (error.request) {
-            // 网络请求失败
-            errorMessage = '网络连接失败，请检查网络连接';
-        } else {
-            // 其他错误
-            errorMessage = `请求失败: ${error.message}`;
-        }
-
+        const errorMessage = formatErrorMessage(error, '生成二维码失败');
         updateStatus(errorMessage, 'error');
         qrcodeImg.src = './shixiao.jpg';
     }
 }
 
-// 开始轮询检查扫码状态
 function startPolling() {
-    // 清除之前的轮询
     clearPolling();
-    
-    // 开始轮询
     pollInterval = setInterval(async () => {
         try {
-            console.log(`检查 ${currentPlatform} 平台状态...`);
             const response = await axios.post('/api/check-status', {
                 platform: currentPlatform,
                 sessionKey: currentSessionKey
             });
-
-            console.log('状态检查响应:', response.data);
-
             if (response.data.success) {
-                const { status, cookie, token } = response.data.data;
-
-                switch(status) {
-                    case 'CONFIRMED':
-                        clearPolling();
-                        const newCookie = cookie || token || '';
-                        cookieResult.value = newCookie;
-
-                        // 自动保存到内存缓存和本地存储
-                        savePlatformCookie(currentPlatform, newCookie);
-                        saveToLocalStorage(currentPlatform, newCookie);
-
-                        updateStatus('扫码成功！Cookie已获取并自动缓存', 'success');
-                        qrcodeImg.src = './shixiao.jpg';
-                        showToast('扫码成功！Cookie已自动缓存');
-                        break;
-
-                    case 'SCANNED':
-                        updateStatus('已扫码，请在手机上确认', 'info');
-                        break;
-
-                    case 'EXPIRED':
-                        clearPolling();
-                        updateStatus('二维码已过期，请刷新', 'error');
-                        qrcodeImg.src = './shixiao.jpg';
-                        break;
-
-                    case 'CANCELED':
-                        clearPolling();
-                        updateStatus('已取消登录', 'error');
-                        qrcodeImg.src = './shixiao.jpg';
-                        break;
-                        
-                    case 'NEW':
-                        updateStatus('等待扫码...', 'info');
-                        break;
-                }
+                handleStatusResponse(response.data.data);
             }
         } catch (error) {
             console.error('检查状态失败:', error);
             clearPolling();
-
-            // 更详细的错误处理
-            let errorMessage = '检查状态失败';
-            if (error.response) {
-                if (error.response.status === 404) {
-                    errorMessage = 'API接口未找到，请检查部署配置';
-                } else if (error.response.status >= 500) {
-                    errorMessage = '服务器内部错误，请稍后重试';
-                } else {
-                    errorMessage = `状态检查失败 (${error.response.status}): ${error.response.data?.message || error.message}`;
-                }
-            } else if (error.request) {
-                errorMessage = '网络连接失败，请检查网络连接';
-            } else {
-                errorMessage = `请求失败: ${error.message}`;
-            }
-
+            const errorMessage = formatErrorMessage(error, '检查状态失败');
             updateStatus(errorMessage, 'error');
         }
     }, 2000);
-    
-    // 30秒后超时
     timeoutTimer = setTimeout(() => {
         clearPolling();
         updateStatus('二维码已过期，请刷新', 'error');
@@ -216,123 +186,123 @@ function startPolling() {
     }, 30000);
 }
 
-// 清除轮询
+function handleStatusResponse({ status, cookie, token }) {
+    switch (status) {
+        case 'CONFIRMED':
+            clearPolling();
+            const newCookie = cookie || token || '';
+            cookieResult.value = newCookie;
+            savePlatformCookie(currentPlatform, newCookie);
+            saveToLocalStorage(currentPlatform, newCookie);
+            updateStatus('扫码成功！Cookie已获取并自动缓存', 'success');
+            qrcodeImg.src = './shixiao.jpg';
+            showToast('扫码成功！Cookie已自动缓存');
+            break;
+        case 'SCANNED':
+            updateStatus('已扫码，请在手机上确认', 'info');
+            break;
+        case 'EXPIRED':
+        case 'CANCELED':
+            clearPolling();
+            updateStatus(status === 'EXPIRED' ? '二维码已过期，请刷新' : '已取消登录', 'error');
+            qrcodeImg.src = './shixiao.jpg';
+            break;
+        case 'NEW':
+            updateStatus('等待扫码...', 'info');
+            break;
+    }
+}
+
 function clearPolling() {
-    if (pollInterval) {
-        clearInterval(pollInterval);
-        pollInterval = null;
-    }
-    if (timeoutTimer) {
-        clearTimeout(timeoutTimer);
-        timeoutTimer = null;
-    }
+    clearInterval(pollInterval);
+    clearTimeout(timeoutTimer);
+    pollInterval = null;
+    timeoutTimer = null;
 }
 
-// 显示/隐藏加载状态
+// =================================================================================
+// UI及辅助函数 (与之前版本基本相同)
+// =================================================================================
+
 function showLoading(show) {
-    if (show) {
-        qrcodeOverlay.style.display = 'flex';
-    } else {
-        qrcodeOverlay.style.display = 'none';
-    }
+    qrcodeOverlay.style.display = show ? 'flex' : 'none';
 }
 
-// 更新状态消息
 function updateStatus(message, type) {
     statusMessage.textContent = message;
     statusMessage.className = `status-message ${type}`;
 }
 
-// 显示Toast通知
-function showToast(message, type = 'success') {
+function showToast(message) {
     const toast = document.getElementById('toast');
     const toastContent = document.getElementById('toast-content');
-
     if (toast && toastContent) {
         toastContent.textContent = message;
         toast.style.display = 'block';
-
-        // 3秒后隐藏
         setTimeout(() => {
             toast.style.display = 'none';
-            toastContent.textContent = '';
         }, 3000);
     }
 }
 
-// Cookie管理函数
-// 从本地存储加载所有平台的Cookie
+function formatErrorMessage(error, defaultMessage) {
+    if (error.response) return `服务器错误 (${error.response.status}): ${error.response.data?.message || error.message}`;
+    if (error.request) return '网络连接失败，请检查网络或API服务';
+    return error.message || defaultMessage;
+}
+
+// =================================================================================
+// 数据持久化与管理 (与之前版本基本相同)
+// =================================================================================
+
 function loadLocalCookies() {
-    Object.keys(platformCookies).forEach(platform => {
-        const stored = localStorage.getItem(`cookie_${platform}`);
+    PLATFORM_CONFIG.forEach(p => {
+        const stored = localStorage.getItem(`cookie_${p.id}`);
         if (stored) {
             try {
-                const cookieData = JSON.parse(stored);
-                platformCookies[platform] = cookieData.value || '';
-            } catch (error) {
-                console.error(`加载${platform}缓存失败:`, error);
+                platformCookies[p.id] = JSON.parse(stored).value || '';
+            } catch (e) {
+                console.error(`加载 ${p.id} 缓存失败:`, e);
             }
         }
     });
 }
 
-// 保存平台Cookie到内存缓存
 function savePlatformCookie(platform, cookieValue) {
-    platformCookies[platform] = cookieValue || '';
+    if (platformCookies.hasOwnProperty(platform)) {
+        platformCookies[platform] = cookieValue || '';
+    }
 }
 
-// 加载平台Cookie到输入框
 function loadPlatformCookie(platform) {
     cookieResult.value = platformCookies[platform] || '';
 }
 
-// 保存到本地存储
 function saveToLocalStorage(platform, cookieValue) {
     try {
-        const cookieData = {
-            platform: platform,
-            value: cookieValue,
-            timestamp: Date.now(),
-            date: new Date().toLocaleString()
-        };
-        localStorage.setItem(`cookie_${platform}`, JSON.stringify(cookieData));
-        console.log(`${platform} Cookie已保存到本地存储`);
-    } catch (error) {
-        console.error(`保存${platform} Cookie失败:`, error);
+        const data = { value: cookieValue, timestamp: Date.now() };
+        localStorage.setItem(`cookie_${platform}`, JSON.stringify(data));
+    } catch (e) {
+        console.error(`保存 ${platform} Cookie到本地存储失败:`, e);
     }
 }
 
-// 清空当前平台的所有数据
 function clearCurrentPlatform() {
-    // 清空输入框
     cookieResult.value = '';
-
-    // 清空内存缓存
     savePlatformCookie(currentPlatform, '');
-
-    // 清空本地存储
     localStorage.removeItem(`cookie_${currentPlatform}`);
-
-    // 更新状态
-    updateStatus(`${currentPlatform} 平台数据已清空`, 'info');
-    showToast(`${currentPlatform} 平台数据已清空`);
+    updateStatus(`${currentPlatform.toUpperCase()} 平台数据已清空`, 'info');
+    showToast(`${currentPlatform.toUpperCase()} 平台数据已清空`);
 }
 
-// 复制到剪贴板 - 原版风格
 function copyToClipboard() {
-    const textArea = document.getElementById("cookie-result");
-    if (!textArea.value) {
+    if (!cookieResult.value) {
         showToast('没有可复制的内容');
         return;
     }
-
-    textArea.select();
-    try {
-        document.execCommand("copy");
+    navigator.clipboard.writeText(cookieResult.value).then(() => {
         showToast("内容已复制到剪切板");
-    } catch (err) {
+    }).catch(() => {
         showToast('复制失败，请手动复制');
-    }
+    });
 }
-
-

@@ -108,8 +108,8 @@ function switchPlatform(platform, clickedBtn) {
     currentPlatform = platform;
     loadPlatformCookie(platform);
 
-    qrcodeImg.src = './shixiao.jpg';
-    updateStatus('点击二维码开始扫码', 'info');
+    // 自动刷新二维码
+    refreshQRCode();
 }
 
 /**
@@ -163,22 +163,50 @@ async function refreshQRCode() {
 
 function startPolling() {
     clearPolling();
-    pollInterval = setInterval(async () => {
+
+    const poller = async () => {
+        // 捕获当前请求的会话密钥，确保请求和响应是对应的
+        const keyForThisRequest = currentSessionKey;
+        if (!keyForThisRequest) return; // 如果没有会话,则不执行
+
         try {
             const response = await axios.post('/api/check-status', {
                 platform: currentPlatform,
-                sessionKey: currentSessionKey
+                sessionKey: keyForThisRequest
             });
-            if (response.data.success) {
-                handleStatusResponse(response.data.data);
+
+            // 如果会话密钥已变，说明是旧响应，忽略
+            if (keyForThisRequest !== currentSessionKey) {
+                console.log('Ignoring response from an old session.');
+                return;
             }
+            
+            handleStatusResponse(response.data.data);
+
         } catch (error) {
+            // 如果会话密钥已变，说明是旧会话的错误，忽略
+            if (keyForThisRequest !== currentSessionKey) {
+                console.log('Ignoring error from an old session.');
+                return;
+            }
             console.error('检查状态失败:', error);
-            clearPolling();
+            clearPolling(); // 出错时停止轮询
             const errorMessage = formatErrorMessage(error, '检查状态失败');
             updateStatus(errorMessage, 'error');
         }
-    }, 2000);
+
+        // 关键改动: 只有在轮询未被停止的情况下，才在2秒后安排下一次轮询
+        // handleStatusResponse 或 catch 中的 clearPolling() 会将 pollInterval 设为 null
+        if (pollInterval) {
+            pollInterval = setTimeout(poller, 2000);
+        }
+    };
+
+    // 设置一个初始值以启动轮询循环
+    pollInterval = 'active'; 
+    poller(); // 立即开始第一次轮询
+
+    // 30秒后超时的逻辑保持不变
     timeoutTimer = setTimeout(() => {
         clearPolling();
         updateStatus('二维码已过期，请刷新', 'error');

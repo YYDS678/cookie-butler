@@ -1,0 +1,80 @@
+{
+  "platforms": {
+    "quark": {
+      "name": "夸克网盘",
+      "clientId": "532",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.81 Safari/537.36 SE 2.X MetaSr 1.0",
+      "endpoints": {
+        "getToken": "https://uop.quark.cn/cas/ajax/getTokenForQrcodeLogin",
+        "checkStatus": "https://uop.quark.cn/cas/ajax/getServiceTicketByQrcodeToken",
+        "accountInfo": "https://pan.quark.cn/account/info",
+        "cloudApi": "https://drive-pc.quark.cn/1/clouddrive/share/sharepage/dir"
+      },
+      "qrUrlTemplate": "https://su.quark.cn/4_eMHBJ?token={token}&client_id={clientId}&ssb=weblogin&uc_param_str=&uc_biz_str=S%3Acustom%7COPT%3ASAREA%400%7COPT%3AIMMERSIVE%401%7COPT%3ABACK_BTN_STYLE%400",
+      "params": {
+        "version": "1.2"
+      }
+    },
+    "uc": {
+      "name": "UC网盘",
+      "clientId": "381",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.81 Safari/537.36 SE 2.X MetaSr 1.0",
+      "endpoints": {
+        "getToken": "https://api.open.uc.cn/cas/ajax/getTokenForQrcodeLogin",
+        "checkStatus": "https://api.open.uc.cn/cas/ajax/getServiceTicketByQrcodeToken",
+        "accountInfo": "https://drive.uc.cn/account/info",
+        "cloudApi": "https://pc-api.uc.cn/1/clouddrive/transfer/upload/pdir"
+      },
+      "qrUrlTemplate": "https://su.uc.cn/1_n0ZCv?uc_param_str=dsdnfrpfbivesscpgimibtbmnijblauputogpintnwktprchmt&token={token}&client_id={clientId}&uc_biz_str=S%3Acustom%7CC%3Atitlebar_fix",
+      "params": {
+        "version": "1.2"
+      },
+      "headers": {
+        "referer": "https://drive.uc.cn"
+      }
+    },
+    "ali": {
+      "name": "阿里云盘",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "endpoints": {
+        "generateQR": "https://passport.aliyundrive.com/newlogin/qrcode/generate.do",
+        "checkStatus": "https://passport.aliyundrive.com/newlogin/qrcode/query.do"
+      },
+      "params": {
+        "appName": "aliyun_drive",
+        "fromSite": "52",
+        "appEntrance": "web",
+        "isMobile": "false",
+        "lang": "zh_CN",
+        "returnUrl": "",
+        "bizParams": "",
+        "_bx_v": "2.2.3",
+        "navlanguage": "zh-CN"
+      }
+    },
+    "115": {
+      "name": "115网盘",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "endpoints": {
+        "getToken": "https://qrcodeapi.115.com/api/1.0/web/1.0/token",
+        "checkStatus": "https://qrcodeapi.115.com/get/status/",
+        "login": "https://passportapi.115.com/app/1.0/android/1.0/login/qrcode"
+      },
+      "headers": {
+        "referer": "https://115.com/"
+      },
+      "params": {
+        "app": "android"
+      }
+    }
+  },
+  "common": {
+    "qrcode": {
+      "width": 200,
+      "margin": 1
+    },
+    "timeout": 15000,
+    "sessionTTL": 300000,
+    "defaultUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  }
+}

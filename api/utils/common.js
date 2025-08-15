@@ -84,6 +84,67 @@ export function createSuccessResponse(data, message = '') {
     return createResponse(true, data, message);
 }
 
+/**
+ * 设置安全的CORS头部
+ * @param {import('http').IncomingMessage} req 请求对象
+ * @param {import('http').ServerResponse} res 响应对象
+ */
+export function setSafeCorsHeaders(req, res) {
+    // 生产环境的URL，Vercel会自动提供VERCEL_URL环境变量
+    const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
+
+    // 从环境变量获取自定义允许的源
+    const customOrigins = process.env.ALLOWED_ORIGINS
+        ? process.env.ALLOWED_ORIGINS.split(',').map(origin => {
+            const trimmed = origin.trim();
+            // 验证域名格式
+            if (trimmed && !trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+                console.warn(`[CORS] ⚠️ 警告: 域名 "${trimmed}" 缺少协议前缀，建议使用 https:// 或 http://`);
+            }
+            return trimmed;
+        }).filter(Boolean)
+        : [];
+
+    // 生产环境安全检查
+    if (process.env.NODE_ENV === 'production' && customOrigins.length === 0 && !vercelUrl) {
+        console.warn('[CORS] ⚠️ 生产环境警告: 未配置ALLOWED_ORIGINS环境变量，建议配置以提高安全性');
+    }
+
+    // 允许的源列表
+    const allowedOrigins = [
+        'http://localhost:3000',  // 本地开发环境
+        'http://127.0.0.1:3000',  // 本地开发环境（备用）
+        vercelUrl,                // Vercel部署域名
+        ...customOrigins          // 用户自定义域名
+    ].filter(Boolean); // 过滤掉null值
+
+    const origin = req.headers.origin;
+
+    // 如果请求的源在许可名单里，则允许它
+    if (origin && allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        console.log(`[CORS] ✅ 允许来源: ${origin}`);
+    } else if (vercelUrl) {
+        // 生产环境默认使用Vercel域名
+        res.setHeader('Access-Control-Allow-Origin', vercelUrl);
+        console.log(`[CORS] 🔒 生产环境默认域名: ${vercelUrl} (请求来源: ${origin || 'none'})`);
+    } else {
+        // 开发环境默认允许localhost
+        res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+        console.log(`[CORS] 🔧 开发环境默认: localhost:3000 (请求来源: ${origin || 'none'})`);
+    }
+
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Credentials', 'false'); // 明确禁用凭据
+
+    // 额外的安全头部
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+}
+
 // 客户端存储方案 - 将数据编码到sessionKey中
 // 这样可以避免serverless环境下的内存存储问题
 export const storage = {

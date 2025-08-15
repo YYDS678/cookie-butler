@@ -14,18 +14,40 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS配置
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    
-    if (req.method === 'OPTIONS') {
-        res.sendStatus(200);
-    } else {
-        next();
-    }
-});
+// CORS配置 - 仅在开发环境使用，生产环境由API路由自己处理
+if (process.env.NODE_ENV !== 'production') {
+    app.use((req, res, next) => {
+        // 开发环境的CORS配置
+        const allowedOrigins = [
+            'http://localhost:3000',
+            'http://127.0.0.1:3000',
+            'http://localhost:8080', // 可能的其他开发端口
+            'http://127.0.0.1:8080'
+        ];
+
+        const origin = req.headers.origin;
+        if (allowedOrigins.includes(origin)) {
+            res.header('Access-Control-Allow-Origin', origin);
+        } else {
+            // 开发环境默认允许localhost
+            res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+        }
+
+        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+        res.header('Access-Control-Allow-Credentials', 'false');
+
+        if (req.method === 'OPTIONS') {
+            res.sendStatus(200);
+        } else {
+            next();
+        }
+    });
+
+    console.log('🔧 开发环境CORS中间件已启用');
+} else {
+    console.log('🔒 生产环境：CORS由API路由自行处理');
+}
 
 // 静态文件服务
 app.use(express.static(path.join(__dirname, 'public')));

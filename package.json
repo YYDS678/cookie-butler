@@ -1,7 +1,7 @@
 {
   "name": "cookie-butler-vercel",
-  "version": "1.0.0",
-  "description": "独立的二维码Cookie获取工具，支持多平台扫码登录",
+  "version": "2.0.0",
+  "description": "企业级多平台二维码Cookie获取工具，采用模块化架构设计",
   "main": "dev-server.js",
   "type": "module",
   "scripts": {
@@ -16,7 +16,11 @@
     "quark",
     "uc",
     "aliyun",
-    "115"
+    "115",
+    "enterprise",
+    "modular",
+    "factory-pattern",
+    "cors-security"
   ],
   "author": "Your Name",
   "license": "MIT",

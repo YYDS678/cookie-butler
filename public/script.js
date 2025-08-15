@@ -211,7 +211,7 @@ function startPolling() {
         clearPolling();
         updateStatus('二维码已过期，请刷新', 'error');
         qrcodeImg.src = './shixiao.jpg';
-    }, 30000);
+    }, 120000);
 }
 
 function handleStatusResponse({ status, cookie, token }) {

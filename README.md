@@ -39,19 +39,23 @@ http://localhost:3000
 
 #### Docker 生产部署（推荐）
 ```bash
-# 1. 克隆项目
-git clone https://github.com/YOUR_USERNAME/cookie-butler.git
-cd cookie-butler
+# 1. 创建docker-compose.yml文件
+curl -O https://raw.githubusercontent.com/woleigedouer/cookie-butler/main/docker-compose.yml
 
-# 2. 配置环境变量（可选）
-# cp .env.example .env
-# 编辑 .env 文件（通常不需要，应用会自动处理CORS）
-
-# 3. 启动生产环境
+# 2. 启动服务（自动拉取镜像）
 docker-compose up -d
 
-# 4. 访问应用
+# 3. 访问应用
 http://localhost:3000
+```
+
+**或者直接运行**：
+```bash
+docker run -d \
+  --name cookie-butler \
+  -p 3000:3000 \
+  -e NODE_ENV=production \
+  ghcr.io/woleigedouer/cookie-butler:main
 ```
 
 #### Vercel 部署
@@ -76,13 +80,13 @@ http://localhost:3000
 
 #### Docker 部署选项
 
-**单容器部署**：
+**使用预构建镜像**：
 ```bash
-docker build -t cookie-butler .
-docker run -d -p 3000:3000 --name cookie-butler cookie-butler
+# 从GitHub Container Registry拉取
+docker run -d -p 3000:3000 --name cookie-butler ghcr.io/woleigedouer/cookie-butler:main
 ```
 
-**生产环境部署**：
+**使用Docker Compose**：
 ```bash
 docker-compose up -d
 ```
@@ -91,15 +95,12 @@ docker-compose up -d
 
 #### 基础Docker部署
 ```bash
-# 构建镜像
-docker build -t cookie-butler .
-
-# 运行容器
+# 直接运行预构建镜像
 docker run -d \
   --name cookie-butler \
   -p 3000:3000 \
   -e NODE_ENV=production \
-  cookie-butler
+  ghcr.io/woleigedouer/cookie-butler:main
 ```
 
 #### Docker Compose管理
@@ -125,9 +126,21 @@ docker-compose down
 - 自动重启
 - 安全配置
 
+#### 开发者构建（可选）
+如果需要修改代码或本地构建：
+```bash
+# 1. 克隆项目
+git clone https://github.com/woleigedouer/cookie-butler.git
+cd cookie-butler
+
+# 2. 本地构建并运行
+docker-compose -f docker-compose.dev.yml up -d
+```
+
 #### 注意事项
 1. **自动配置** - 应用会自动处理CORS和域名配置
 2. **简单维护** - 容器会自动重启，日志可通过 `docker-compose logs` 查看
+3. **多架构支持** - 自动适配 AMD64、ARM64、ARM32 架构
 
 ## 📁 项目结构
 

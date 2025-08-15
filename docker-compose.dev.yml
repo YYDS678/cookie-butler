@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  cookie-butler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cookie-butler-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      # 开发环境代码热重载（可选）
+      - ./public:/app/public:ro
+      - ./api:/app/api:ro

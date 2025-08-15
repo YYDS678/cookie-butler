@@ -2,10 +2,14 @@ version: '3.8'
 
 services:
   cookie-butler:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/woleigedouer/cookie-butler:main
     container_name: cookie-butler
+    restart: unless-stopped
     ports:
       - "3000:3000"
-    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      # 可选的环境变量配置
+      # - ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+      # - API_TIMEOUT=15000
+      # - SESSION_TTL=300000

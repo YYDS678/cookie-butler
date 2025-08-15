@@ -37,7 +37,24 @@ http://localhost:3000
 
 ### 生产部署
 
-#### Vercel 部署（推荐）
+#### Docker 生产部署（推荐）
+```bash
+# 1. 克隆项目
+git clone https://github.com/YOUR_USERNAME/cookie-butler.git
+cd cookie-butler
+
+# 2. 配置环境变量（可选）
+# cp .env.example .env
+# 编辑 .env 文件（通常不需要，应用会自动处理CORS）
+
+# 3. 启动生产环境
+docker-compose up -d
+
+# 4. 访问应用
+http://localhost:3000
+```
+
+#### Vercel 部署
 1. 点击上方的 "Deploy with Vercel" 按钮
 2. 连接你的 GitHub 仓库
 3. 配置环境变量（可选）
@@ -47,15 +64,70 @@ http://localhost:3000
 复制 `.env.example` 为 `.env` 并根据需要修改：
 
 ```bash
-# 允许的CORS源（生产环境重要！）
-ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+# 可选：额外的CORS域名（应用会自动处理部署域名）
+# ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
 
 # 其他可选配置
-API_TIMEOUT=15000
-SESSION_TTL=300000
+# API_TIMEOUT=15000
+# SESSION_TTL=300000
 ```
 
-**⚠️ 安全提醒**：生产环境务必配置 `ALLOWED_ORIGINS`，防止恶意网站盗用API。
+**💡 提示**：应用会自动处理CORS配置，通常不需要手动设置环境变量。
+
+#### Docker 部署选项
+
+**单容器部署**：
+```bash
+docker build -t cookie-butler .
+docker run -d -p 3000:3000 --name cookie-butler cookie-butler
+```
+
+**生产环境部署**：
+```bash
+docker-compose up -d
+```
+
+### Docker 详细部署说明
+
+#### 基础Docker部署
+```bash
+# 构建镜像
+docker build -t cookie-butler .
+
+# 运行容器
+docker run -d \
+  --name cookie-butler \
+  -p 3000:3000 \
+  -e NODE_ENV=production \
+  cookie-butler
+```
+
+#### Docker Compose管理
+```bash
+# 查看服务状态
+docker-compose ps
+
+# 查看日志
+docker-compose logs -f
+
+# 重启服务
+docker-compose restart cookie-butler
+
+# 更新镜像
+docker-compose pull && docker-compose up -d
+
+# 停止服务
+docker-compose down
+```
+
+#### 特性
+- Node.js应用容器
+- 自动重启
+- 安全配置
+
+#### 注意事项
+1. **自动配置** - 应用会自动处理CORS和域名配置
+2. **简单维护** - 容器会自动重启，日志可通过 `docker-compose logs` 查看
 
 ## 📁 项目结构
 
@@ -63,6 +135,9 @@ SESSION_TTL=300000
 cookie-butler/
 ├── package.json              # 项目配置
 ├── dev-server.js             # 本地开发服务器
+├── Dockerfile                # Docker构建文件
+├── docker-compose.yml        # Docker编排配置
+├── .dockerignore             # Docker构建忽略文件
 ├── .env.example              # 环境变量配置示例
 ├── api/                      # 后端API
 │   ├── qrcode.js            # 二维码生成路由
@@ -78,6 +153,7 @@ cookie-butler/
 │   │   └── uc.js           # UC网盘实现
 │   └── utils/
 │       └── common.js        # 通用工具和安全函数
+
 └── public/                  # 前端文件
     ├── index.html           # 主页面
     ├── script.js            # 交互逻辑

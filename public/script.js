@@ -318,19 +318,19 @@ function clearCurrentPlatform() {
     showToast(`${currentPlatform} 平台数据已清空`);
 }
 
-// 复制到剪贴板 - 原版风格
-function copyToClipboard() {
+// 复制到剪贴板 - 使用现代API
+async function copyToClipboard() {
     const textArea = document.getElementById("cookie-result");
     if (!textArea.value) {
         showToast('没有可复制的内容');
         return;
     }
 
-    textArea.select();
     try {
-        document.execCommand("copy");
+        await navigator.clipboard.writeText(textArea.value);
         showToast("内容已复制到剪切板");
     } catch (err) {
+        console.error('复制失败:', err);
         showToast('复制失败，请手动复制');
     }
 }

@@ -7,8 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: cookie-butler-dev
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    network_mode: host
     environment:
       - NODE_ENV=development
     volumes:

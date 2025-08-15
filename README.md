@@ -53,7 +53,7 @@ http://localhost:3000
 ```bash
 docker run -d \
   --name cookie-butler \
-  -p 3000:3000 \
+  --network host \
   -e NODE_ENV=production \
   ghcr.io/woleigedouer/cookie-butler:main
 ```
@@ -83,7 +83,7 @@ docker run -d \
 **使用预构建镜像**：
 ```bash
 # 从GitHub Container Registry拉取
-docker run -d -p 3000:3000 --name cookie-butler ghcr.io/woleigedouer/cookie-butler:main
+docker run -d --network host --name cookie-butler ghcr.io/woleigedouer/cookie-butler:main
 ```
 
 **使用Docker Compose**：
@@ -98,7 +98,7 @@ docker-compose up -d
 # 直接运行预构建镜像
 docker run -d \
   --name cookie-butler \
-  -p 3000:3000 \
+  --network host \
   -e NODE_ENV=production \
   ghcr.io/woleigedouer/cookie-butler:main
 ```
@@ -138,9 +138,11 @@ docker-compose -f docker-compose.dev.yml up -d
 ```
 
 #### 注意事项
-1. **自动配置** - 应用会自动处理CORS和域名配置
-2. **简单维护** - 容器会自动重启，日志可通过 `docker-compose logs` 查看
-3. **多架构支持** - 自动适配 AMD64、ARM64、ARM32 架构
+1. **网络模式** - 使用host模式以确保API访问正常，避免网络超时问题
+2. **自动配置** - 应用会自动处理CORS和域名配置，检测本机IP地址
+3. **简单维护** - 容器会自动重启，日志可通过 `docker-compose logs` 查看
+4. **多架构支持** - 自动适配 AMD64、ARM64、ARM32 架构
+5. **端口访问** - host模式下直接使用3000端口，无需端口映射
 
 ## 📁 项目结构
 

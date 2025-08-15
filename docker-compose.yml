@@ -5,8 +5,7 @@ services:
     image: ghcr.io/woleigedouer/cookie-butler:main
     container_name: cookie-butler
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    network_mode: host
     environment:
       - NODE_ENV=production
       # 可选的环境变量配置

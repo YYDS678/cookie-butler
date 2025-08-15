@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { networkInterfaces } from 'os';
 
 // 通用请求头
 export const COMMON_HEADERS = {
@@ -90,8 +91,7 @@ export function createSuccessResponse(data, message = '') {
  */
 function getLocalIPs() {
     try {
-        const os = require('os');
-        const nets = os.networkInterfaces();
+        const nets = networkInterfaces();
         const ips = [];
 
         for (const name of Object.keys(nets)) {

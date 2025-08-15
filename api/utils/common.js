@@ -85,6 +85,31 @@ export function createSuccessResponse(data, message = '') {
 }
 
 /**
+ * 获取服务器本地IP地址
+ * @returns {Array<string>} 本地IP地址列表
+ */
+function getLocalIPs() {
+    try {
+        const os = require('os');
+        const nets = os.networkInterfaces();
+        const ips = [];
+
+        for (const name of Object.keys(nets)) {
+            for (const net of nets[name]) {
+                // 跳过内部地址和IPv6地址
+                if (net.family === 'IPv4' && !net.internal) {
+                    ips.push(net.address);
+                }
+            }
+        }
+        return ips;
+    } catch (error) {
+        console.warn('[CORS] ⚠️ 获取本地IP失败:', error.message);
+        return [];
+    }
+}
+
+/**
  * 设置安全的CORS头部
  * @param {import('http').IncomingMessage} req 请求对象
  * @param {import('http').ServerResponse} res 响应对象
@@ -105,9 +130,14 @@ export function setSafeCorsHeaders(req, res) {
         }).filter(Boolean)
         : [];
 
-    // 生产环境安全检查
-    if (process.env.NODE_ENV === 'production' && customOrigins.length === 0 && !vercelUrl) {
-        console.warn('[CORS] ⚠️ 生产环境警告: 未配置ALLOWED_ORIGINS环境变量，建议配置以提高安全性');
+    // 获取服务器本地IP地址
+    const localIPs = getLocalIPs();
+    const port = process.env.PORT || 3000;
+    const localOrigins = localIPs.map(ip => `http://${ip}:${port}`);
+
+    // 生产环境安全检查（现在考虑自动获取的IP）
+    if (process.env.NODE_ENV === 'production' && customOrigins.length === 0 && !vercelUrl && localOrigins.length === 0) {
+        console.warn('[CORS] ⚠️ 生产环境警告: 未配置ALLOWED_ORIGINS环境变量，且无法获取本地IP，建议配置以提高安全性');
     }
 
     // 允许的源列表
@@ -115,8 +145,15 @@ export function setSafeCorsHeaders(req, res) {
         'http://localhost:3000',  // 本地开发环境
         'http://127.0.0.1:3000',  // 本地开发环境（备用）
         vercelUrl,                // Vercel部署域名
+        ...localOrigins,          // 自动获取的本地IP地址
         ...customOrigins          // 用户自定义域名
     ].filter(Boolean); // 过滤掉null值
+
+    // 首次运行时显示允许的源列表
+    if (!setSafeCorsHeaders._logged) {
+        console.log('[CORS] 🌐 允许的源列表:', allowedOrigins);
+        setSafeCorsHeaders._logged = true;
+    }
 
     const origin = req.headers.origin;
 

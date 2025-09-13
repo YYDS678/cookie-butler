@@ -1,5 +1,4 @@
 import { BasePlatform } from './base.js';
-import CryptoJS from 'crypto-js';
 import { STATUS } from '../utils/common.js';
 
 /**
@@ -32,10 +31,11 @@ export class BaiduPlatform extends BasePlatform {
                 _: t3
             };
 
-            // 构建请求头
+            // 构建请求头（最小化配置，降低风控风险）
             const headers = {
                 'User-Agent': this.getUserAgent(),
-                ...this.config.headers
+                'Referer': this.getHeader('referer'),
+                'Accept-Language': 'zh-CN,zh;q=0.9'
             };
 
             // 调用百度API获取二维码
@@ -102,10 +102,11 @@ export class BaiduPlatform extends BasePlatform {
                 _: t3
             };
 
-            // 构建请求头
+            // 构建请求头（最小化配置，降低风控风险）
             const headers = {
                 'User-Agent': this.getUserAgent(),
-                ...this.config.headers
+                'Referer': this.getHeader('referer'),
+                'Accept-Language': 'zh-CN,zh;q=0.9'
             };
 
             // 检查扫码状态
@@ -124,8 +125,16 @@ export class BaiduPlatform extends BasePlatform {
 
             // 检查是否扫码成功/已扫码待确认
             if (resData.channel_v) {
-                const bdData = JSON.parse(resData.channel_v);
-                if (bdData.v) {
+                let bdData = null;
+                try {
+                    bdData = JSON.parse(resData.channel_v);
+                } catch (e) {
+                    // JSON解析失败，返回NEW状态避免轮询中断
+                    console.warn('[百度网盘] channel_v JSON解析失败，继续轮询:', e.message);
+                    return this.createSuccessResponse({ status: STATUS.NEW });
+                }
+
+                if (bdData?.v) {
                     const cookie = await this.getBaiduCookie(bdData.v, t1, t3);
                     return this.createSuccessResponse({ status: STATUS.CONFIRMED, cookie });
                 }
@@ -174,7 +183,8 @@ export class BaiduPlatform extends BasePlatform {
 
             const cookieHeaders = {
                 'User-Agent': this.getUserAgent(),
-                ...this.config.headers
+                'Referer': this.getHeader('referer'),
+                'Accept-Language': 'zh-CN,zh;q=0.9'
             };
 
             const cookieResponse = await this.request({
@@ -191,10 +201,13 @@ export class BaiduPlatform extends BasePlatform {
 
             // 解析cookie数据
             const cookieData = cookieResponse.data?.data || cookieResponse.data;
-            const extractedBduss = this.extractValue(cookieData, /"bduss":\s*"(.*?)"/i);
-            const stoken = this.extractValue(cookieData, /"stoken":\s*"(.*?)"/i);
-            const ptoken = this.extractValue(cookieData, /"ptoken":\s*"(.*?)"/i);
-            const ubi = encodeURIComponent(this.extractValue(cookieData, /"ubi":\s*"(.*?)"/i));
+            const text = typeof cookieData === 'string' ? cookieData : JSON.stringify(cookieData || '');
+
+            const extractedBduss = this.extractValue(text, /"bduss":\s*"(.*?)"/i);
+            const stoken = this.extractValue(text, /"stoken":\s*"(.*?)"/i);
+            const ptoken = this.extractValue(text, /"ptoken":\s*"(.*?)"/i);
+            const ubiRaw = this.extractValue(text, /"ubi":\s*"(.*?)"/i);
+            const ubi = ubiRaw ? encodeURIComponent(ubiRaw) : '';
 
             // 仅 BDUSS 必须；STOKEN/PTOKEN 可能在重定向后由 Set-Cookie 设置
             if (!extractedBduss) {
@@ -294,16 +307,10 @@ export class BaiduPlatform extends BasePlatform {
      * @returns {string} UUID字符串
      */
     generateUUID() {
-        // 使用crypto-js生成随机UUID
-        const randomBytes = CryptoJS.lib.WordArray.random(16);
-        const hex = randomBytes.toString(CryptoJS.enc.Hex);
-        return [
-            hex.substring(0, 8),
-            hex.substring(8, 12),
-            '4' + hex.substring(13, 16),
-            ((parseInt(hex.substring(16, 17), 16) & 0x3) | 0x8).toString(16) + hex.substring(17, 20),
-            hex.substring(20, 32)
-        ].join('-');
+        // Node 18+ 原生方案
+        if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
+        // 退化：足够作为请求去重标识，避免复杂位段处理（KISS/YAGNI）
+        return Math.random().toString(36).slice(2) + Date.now().toString(36);
     }
 
     /**
@@ -312,13 +319,7 @@ export class BaiduPlatform extends BasePlatform {
      * @returns {string} Base64字符串
      */
     arrayBufferToBase64(buffer) {
-        let binary = '';
-        const bytes = new Uint8Array(buffer);
-        const len = bytes.byteLength;
-        for (let i = 0; i < len; i++) {
-            binary += String.fromCharCode(bytes[i]);
-        }
-        return btoa(binary);
+        return Buffer.from(buffer).toString('base64');
     }
 
     /**

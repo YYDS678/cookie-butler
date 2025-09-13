@@ -2,6 +2,7 @@ import { QuarkPlatform } from './quark.js';
 import { UCPlatform } from './uc.js';
 import { AliPlatform } from './ali.js';
 import { Platform115 } from './115.js';
+import { BaiduPlatform } from './baidu.js';
 
 /**
  * 平台工厂类 - 负责创建和管理平台实例
@@ -13,7 +14,8 @@ class PlatformFactory {
             'quark': QuarkPlatform,
             'uc': UCPlatform,
             'ali': AliPlatform,
-            '115': Platform115
+            '115': Platform115,
+            'baidu': BaiduPlatform
         };
         
         // 实例缓存

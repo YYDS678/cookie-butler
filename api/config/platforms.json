@@ -66,6 +66,38 @@
       "params": {
         "app": "android"
       }
+    },
+    "baidu": {
+      "name": "百度网盘",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.6478.61 Safari/537.36",
+      "endpoints": {
+        "getQRCode": "https://passport.baidu.com/v2/api/getqrcode",
+        "checkStatus": "https://passport.baidu.com/channel/unicast",
+        "bdussLogin": "https://passport.baidu.com/v3/login/main/qrbdusslogin",
+        "auth": "https://passport.baidu.com/v3/login/api/auth/",
+        "panHome": "https://pan.baidu.com/disk/home"
+      },
+      "headers": {
+        "referer": "https://pan.baidu.com/",
+        "sec-ch-ua-platform": "\"Windows\"",
+        "sec-ch-ua": "\"Not/A)Brand\";v=\"8\", \"Chromium\";v=\"126\", \"Google Chrome\";v=\"126\"",
+        "DNT": "1",
+        "sec-ch-ua-mobile": "?0",
+        "Sec-Fetch-Site": "same-site",
+        "Sec-Fetch-Mode": "no-cors",
+        "Sec-Fetch-Dest": "script",
+        "Accept-Language": "zh-CN,zh;q=0.9"
+      },
+      "params": {
+        "lp": "pc",
+        "qrloginfrom": "pc",
+        "apiver": "v3",
+        "tpl": "netdisk",
+        "loginVersion": "v5",
+        "qrcode": "1",
+        "return_type": "5",
+        "u": "https://pan.baidu.com/disk/main#/index?category=all"
+      }
     }
   },
   "common": {

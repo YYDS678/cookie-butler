@@ -9,7 +9,8 @@ let platformCookies = {
     '115': '',
     'quark': '',
     'ali': '',
-    'uc': ''
+    'uc': '',
+    'baidu': ''
 };
 
 // DOM元素

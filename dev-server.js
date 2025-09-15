@@ -93,8 +93,13 @@ app.post('/api/check-status', async (req, res) => {
     }
 });
 
-// 处理所有其他路由，返回index.html（SPA支持）
-app.get('*', (req, res) => {
+// SPA Fallback: 处理所有非API、非静态文件的GET请求，返回index.html
+app.get('*', (req, res, next) => {
+    // 如果请求路径以/api/开头，则跳过此中间件，让它进入404或错误处理
+    if (req.path.startsWith('/api/')) {
+        return next();
+    }
+    // 否则，发送单页应用的入口文件
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

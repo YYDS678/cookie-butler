@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { networkInterfaces } from 'os';
+import CryptoJS from 'crypto-js';
 
 // 通用请求头
 export const COMMON_HEADERS = {
@@ -181,6 +182,60 @@ export function setSafeCorsHeaders(req, res) {
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
 }
+
+// ==================== 加密工具函数 ====================
+
+/**
+ * 生成MD5哈希
+ * @param {string} text 要哈希的文本
+ * @returns {string} MD5哈希值
+ */
+export function generateMD5(text) {
+    return CryptoJS.MD5(text).toString();
+}
+
+/**
+ * 生成SHA256哈希
+ * @param {string} text 要哈希的文本
+ * @returns {string} SHA256哈希值
+ */
+export function generateSHA256(text) {
+    return CryptoJS.SHA256(text).toString();
+}
+
+/**
+ * 生成设备ID（UC Token版专用）
+ * @param {number} timestamp 时间戳
+ * @returns {string} 16位设备ID
+ */
+export function generateDeviceID(timestamp) {
+    return generateMD5(timestamp.toString()).slice(0, 16);
+}
+
+/**
+ * 生成请求ID（UC Token版专用）
+ * @param {string} deviceID 设备ID
+ * @param {number} timestamp 时间戳
+ * @returns {string} 16位请求ID
+ */
+export function generateReqId(deviceID, timestamp) {
+    return generateMD5(deviceID + timestamp).slice(0, 16);
+}
+
+/**
+ * 生成x-pan-token签名（UC Token版专用）
+ * @param {string} method HTTP方法（GET/POST）
+ * @param {string} pathname URL路径
+ * @param {number} timestamp 时间戳
+ * @param {string} signKey 签名密钥
+ * @returns {string} SHA256签名
+ */
+export function generateXPanToken(method, pathname, timestamp, signKey) {
+    const data = `${method}&${pathname}&${timestamp}&${signKey}`;
+    return generateSHA256(data);
+}
+
+// ==================== 存储方案 ====================
 
 // 客户端存储方案 - 将数据编码到sessionKey中
 // 这样可以避免serverless环境下的内存存储问题

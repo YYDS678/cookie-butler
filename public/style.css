@@ -100,3 +100,13 @@
     background-color: #007bff !important;
     color: white !important;
 }
+
+/* 紧凑菜单样式 - 减小按钮间距和padding */
+.menu-horizontal > li {
+    padding: 0 2px !important;
+}
+
+.menu-horizontal > li > a {
+    padding: 8px 10px !important;
+    font-size: 14px !important;
+}

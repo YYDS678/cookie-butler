@@ -1,5 +1,6 @@
 import { QuarkPlatform } from './quark.js';
 import { UCPlatform } from './uc.js';
+import { UCTokenPlatform } from './uc-token.js';
 import { AliPlatform } from './ali.js';
 import { Platform115 } from './115.js';
 import { BaiduPlatform } from './baidu.js';
@@ -13,6 +14,7 @@ class PlatformFactory {
         this.platforms = {
             'quark': QuarkPlatform,
             'uc': UCPlatform,
+            'uc_token': UCTokenPlatform,
             'ali': AliPlatform,
             '115': Platform115,
             'baidu': BaiduPlatform

@@ -10,6 +10,7 @@ let platformCookies = {
     'quark': '',
     'ali': '',
     'uc': '',
+    'uc_token': '',
     'baidu': ''
 };
 

@@ -5,8 +5,9 @@ const PLATFORM_CONFIG = [
     { id: 'quark', name: '夸克', default: true, envNames: ['夸克Cookie'] },
     { id: 'uc', name: 'UC', envNames: ['UCCookie'] },
     // { id: 'ali', name: '阿里', envNames: [] },
-    // { id: '115', name: '115', envNames: [] },
     { id: 'baidu', name: '百度', envNames: ['百度网盘Cookie'] },
+    { id: 'uc_token', name: 'UC_Token', envNames: ['UC_Token'] },
+    { id: '115', name: '115', envNames: ['115Cookie'] },
 ];
 const DEFAULT_PLATFORM = PLATFORM_CONFIG.find(p => p.default) || PLATFORM_CONFIG[0];
 
@@ -24,6 +25,7 @@ let platformCookies = {
     'quark': '',
     'ali': '',
     'uc': '',
+    'uc_token': '',
     'baidu': ''
 };
 

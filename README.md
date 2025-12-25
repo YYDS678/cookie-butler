@@ -1,6 +1,6 @@
 # Cookie Butler
 
-一个企业级多平台二维码Cookie获取工具，支持夸克网盘、UC网盘、阿里云盘、115网盘的扫码登录。
+一个企业级多平台二维码Cookie获取工具，支持夸克网盘、UC网盘（Cookie版+Token版）、阿里云盘、115网盘、百度网盘的扫码登录。
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/YOUR_USERNAME/cookie-butler)
 
@@ -12,6 +12,7 @@
 - 🚀 **高性能** - API响应速度提升86%，内存占用优化
 - 🔧 **易于扩展** - 新增平台只需3步，支持热配置更新
 - 📱 **现代化UI** - 响应式设计，支持移动端
+- 🔐 **多认证方式** - 支持Cookie和OAuth Token两种认证方式（UC网盘）
 
 ## 🚀 快速开始
 
@@ -164,10 +165,12 @@ cookie-butler/
 │   │   ├── index.js        # 平台工厂
 │   │   ├── 115.js          # 115网盘实现
 │   │   ├── ali.js          # 阿里云盘实现
+│   │   ├── baidu.js        # 百度网盘实现
 │   │   ├── quark.js        # 夸克网盘实现
-│   │   └── uc.js           # UC网盘实现
+│   │   ├── uc.js           # UC网盘Cookie版实现
+│   │   └── uc-token.js     # UC网盘Token版实现（OAuth）
 │   └── utils/
-│       └── common.js        # 通用工具和安全函数
+│       └── common.js        # 通用工具、安全函数和加密工具
 
 └── public/                  # 前端文件
     ├── index.html           # 主页面
@@ -254,8 +257,34 @@ this.platforms = {
 - **现代API** - 使用最新的Web标准，避免安全漏洞
 - **环境隔离** - 开发/生产环境配置分离
 
+## 🌟 支持的平台
+
+| 平台 | 认证方式 | 状态 | 说明 |
+|------|---------|------|------|
+| 夸克网盘 | Cookie | ✅ | 扫码获取Cookie |
+| UC网盘 | Cookie | ✅ | CAS认证，获取Cookie |
+| UC网盘 | OAuth Token | ✅ | TV版OAuth流程，获取access_token |
+| 阿里云盘 | Cookie | ⚠️ | 已实现但暂时隐藏 |
+| 115网盘 | Cookie | ✅ | 扫码获取Cookie |
+| 百度网盘 | Cookie | ✅ | 扫码获取Cookie |
+
+### UC网盘双认证说明
+
+UC网盘提供两种认证方式：
+
+1. **UC-CK（Cookie版）**
+   - 使用CAS（Central Authentication Service）认证
+   - 获取service ticket后换取Cookie
+   - 适用于常规Web应用
+
+2. **UC-TK（Token版）**
+   - 使用OAuth 2.0流程
+   - 获取access_token和refresh_token
+   - 适用于TV端和开放平台API
+   - 支持token刷新机制
+
 ---
 
-**版本**: 2.0.0
-**更新时间**: 2025-08-15
+**版本**: 2.1.0
+**更新时间**: 2025-10-23
 **架构**: 企业级模块化设计

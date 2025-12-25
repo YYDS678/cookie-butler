@@ -98,6 +98,30 @@
         "return_type": "5",
         "u": "https://pan.baidu.com/disk/main#/index?category=all"
       }
+    },
+    "uc_token": {
+      "name": "UC网盘TV版",
+      "clientId": "5acf882d27b74502b7040b0c65519aa7",
+      "signKey": "l3srvtd7p42l0d0x1u8d7yc8ye9kki4d",
+      "appVer": "1.6.8",
+      "channel": "UCTVOFFICIALWEB",
+      "deviceId": "07b48aaba8a739356ab8107b5e230ad4",
+      "userAgent": "Mozilla/5.0 (Linux; U; Android 13; zh-cn; M2004J7AC Build/UKQ1.231108.001) AppleWebKit/533.1 (KHTML, like Gecko) Mobile Safari/533.1",
+      "endpoints": {
+        "authorize": "https://open-api-drive.uc.cn/oauth/authorize",
+        "getCode": "https://open-api-drive.uc.cn/oauth/code",
+        "getToken": "http://api.extscreen.com/ucdrive/token"
+      },
+      "deviceInfo": {
+        "device_brand": "Xiaomi",
+        "platform": "tv",
+        "device_name": "M2004J7AC",
+        "device_model": "M2004J7AC",
+        "build_device": "M2004J7AC",
+        "build_product": "M2004J7AC",
+        "device_gpu": "Adreno (TM) 550",
+        "activity_rect": "{}"
+      }
     }
   },
   "common": {

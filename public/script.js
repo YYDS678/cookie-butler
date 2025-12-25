@@ -19,15 +19,11 @@ let currentSessionKey = null;
 let pollInterval = null;
 let timeoutTimer = null;
 
-// 平台Cookie缓存 - 内存中临时存储
-let platformCookies = {
-    '115': '',
-    'quark': '',
-    'ali': '',
-    'uc': '',
-    'uc_token': '',
-    'baidu': ''
-};
+// 平台Cookie缓存 - 内存中临时存储（动态初始化）
+let platformCookies = {};
+PLATFORM_CONFIG.forEach(platform => {
+    platformCookies[platform.id] = '';
+});
 
 // DOM元素
 // =================================================================================

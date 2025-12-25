@@ -62,8 +62,13 @@
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .status-message {
@@ -99,4 +104,36 @@
 .btn-scan.active {
     background-color: #007bff !important;
     color: white !important;
+}
+
+/* 隐藏滚动条 */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+/* 确保菜单项不换行 */
+.menu-horizontal {
+    flex-wrap: nowrap !important;
+}
+
+.menu-horizontal>li {
+    flex-shrink: 0;
+}
+
+/* 减小菜单项内间距 */
+.menu-horizontal>li>a,
+.menu-horizontal>li>span,
+.menu-horizontal>li>label {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    padding-top: 0.3rem !important;
+    padding-bottom: 0.3rem !important;
+    min-height: 1.8rem !important;
 }
